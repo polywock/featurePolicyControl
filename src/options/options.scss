@@ -1,0 +1,57 @@
+
+@import "../common.scss";
+
+#root {
+  @media only screen and (min-width: 1000px) {
+    display: grid;
+    justify-content: center;
+  }
+
+
+  --icon-color: #aaa;
+  --icon-vibrant-color: #ff6464;
+}
+
+:root.darkTheme {
+  --icon-color: #636363;
+  --icon-vibrant-color: #b05555;
+}
+
+#App {
+  margin: 0px;
+  width: 1000px;
+  margin-top: 40px;
+
+  & > .section {
+    background-color: var(--fg-color);
+    padding: 20px;
+    margin-bottom: 40px;
+    box-shadow: var(--card-shadow);
+
+    &.options {
+      & > .fields {
+        margin-top: 20px;
+        
+        & > .field {
+          display: grid;
+          grid-template-columns: 300px max-content;
+          grid-column-gap: 10px;
+          margin-bottom: 10px;
+          align-items: center;
+        }
+      }
+    }
+
+    &.editor {
+      & > .rules {
+        & > div {
+          margin-bottom: 10px;
+        }
+      }   
+    }
+    
+    & > h2 {
+      margin-top: 0;
+    }
+  }
+}

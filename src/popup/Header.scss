@@ -1,0 +1,46 @@
+
+.Header {
+  display: grid;
+  grid-template-columns: max-content 1fr max-content;
+  justify-items: right;
+  align-items: center;
+  grid-column-gap: 10px;
+  padding: 3px 10px 0px 10px;
+  background-color: var(--fg-color);
+  border-bottom: 1px solid var(--border-color);
+
+
+  & > div {
+    color: var(--header-icon-color);
+    border: none;
+
+    &:focus {
+      outline: none;
+    }
+
+    &:hover {
+      opacity: 0.9;
+    }
+
+    &.toggle.active {
+      color: var(--header-icon-active-color);
+
+      &:hover {
+        opacity: 0.9;
+      }
+    }
+
+    &.toggle {
+      color: var(--header-icon-muted-color);
+
+      &:hover {
+        opacity: 0.9;
+      }
+    }
+
+
+    & > svg {
+      vertical-align: baseline;
+    }
+  }
+}

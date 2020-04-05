@@ -1,0 +1,26 @@
+
+.Rule {
+  display: grid;
+  grid-template-columns: max-content max-content 1fr max-content max-content 100px max-content;
+  grid-column-gap: 10px;
+  align-items: center;
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  background-color: var(fg-color);
+
+
+  &.disabled {
+    opacity: 0.75;
+  }
+
+  & .icon {
+    color: var(--icon-color);
+    padding: 0;
+    background-color: inherit;
+    border: none;
+
+    &:focus {
+      outline: 1px solid var(--focus-color);
+    }
+  }
+}

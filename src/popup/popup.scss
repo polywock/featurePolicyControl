@@ -1,0 +1,31 @@
+
+
+@import "../common.scss";
+
+:root {
+  --control-hover-bg-color: #00000020;
+
+  --header-icon-color: #555;
+  --header-icon-muted-color: #888;
+  --header-icon-active-color: #24c;
+}
+
+:root.darkTheme {
+  --control-hover-bg-color: #ffffff10;
+
+  --header-icon-color: #eee;
+  --header-icon-muted-color: #eaeaea;
+  --header-icon-active-color: #fdff6e;
+}
+
+
+#App {
+  & > .tabMedias {
+    padding: 10px;
+    display: grid;
+    row-gap: 10px;
+    padding-right: 15px;
+  }
+}
+
+

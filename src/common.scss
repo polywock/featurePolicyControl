@@ -1,0 +1,118 @@
+
+
+:root {
+  --bg-color: lightgray;
+  --fg-color: #fafafa; 
+  --focus-color: blue; 
+  --text-color: black; 
+  --border-color: #aaa;
+
+  --link-color: #02a;
+
+  --code-bg-color: #eee;
+  --code-color: black; 
+
+  --card-shadow: -1px 1px 3px 0px #aaa;
+  --card-border: none;
+}
+
+:root.darkTheme {
+  --bg-color: #000;
+  --fg-color: #222; 
+  --focus-color: yellow; 
+  --text-color: white; 
+  --border-color: #555;
+
+  --link-color: papayawhip;
+
+  --code-bg-color: #777;
+  --code-color: white; 
+
+  --card-shadow: none;
+  --card-border: 1px solid #444; 
+}
+
+body {
+  font-family: "Open Sans", monospace;
+  font-size: 14px; 
+
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+
+* {
+  box-sizing: border-box;
+}
+
+button, input, select {
+  font-size: inherit;
+  font-family: inherit;
+
+  &:focus {
+    outline: 1px solid var(--focus-color);
+  }
+}
+
+select {
+  background-color: inherit; 
+  color: inherit; 
+  border: 1px solid var(--border-color); 
+}
+
+button, input[type="text"] {
+  background-color: var(--fg-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color); 
+  padding: 5px; 
+
+  &:focus {
+    border: 1px solid var(--focus-color);
+    outline: none;
+  }
+}
+
+button {
+  cursor: pointer; 
+
+  &.large {
+    font-size: 1.2em;
+    padding: 7px;
+  }
+}
+
+code {
+  background-color: var(--code-bg-color);
+  color: var(--code-color);
+  padding: 5px;
+}
+
+
+a, a:visited {
+  color: var(--link-color); 
+  text-decoration: none;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+svg {
+  vertical-align: middle;
+}
+
+.card {
+  padding: 10px;
+  background-color: var(--fg-color);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  display: inline-block;
+  font-size: 1.1em;
+  line-height: 2;
+}
+
+input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+}
