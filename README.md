@@ -1,7 +1,7 @@
 # Feature Policy Control
 Override Feature-Policy response headers depending on the URL. 
 
-To use, install the [Chrome](https://chrome.google.com/webstore/detail/gnhcejibdkgceebbeljdolienjplkpin), or [Edge](https://microsoftedge.microsoft.com/addons/detail/ebooeoldhjdndkojljcbajcpojhbgkgh) extension. 
+To use, install the [Chrome](https://chrome.google.com/webstore/detail/gnhcejibdkgceebbeljdolienjplkpin) or [Edge](https://microsoftedge.microsoft.com/addons/detail/ebooeoldhjdndkojljcbajcpojhbgkgh) extension. 
 
 If it doesn't work, try disabling other extensions. Only one extension can modify response headers. 
 
