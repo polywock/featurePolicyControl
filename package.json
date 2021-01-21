@@ -28,7 +28,7 @@
   "dependencies": {
     "@types/chrome": "0.0.93",
     "@types/lodash.debounce": "^4.0.6",
-    "immer": "^5.3.6",
+    "immer": "^8.0.1",
     "lodash.debounce": "^4.0.8",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
