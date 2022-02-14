@@ -4,11 +4,22 @@ window.add.addEventListener("click", () => {
   persist()
 })
 
-chrome.storage.local.get("config", ({config}) => {
-  config.rules.forEach(data => {
-    addRule(data)
+window.reset.addEventListener("click", () => {
+  chrome.storage.local.set({config: getDefaultConfig()}, () => {
+    reload()
   })
 })
+
+function reload() {
+  window.rules.innerHTML = ""
+  chrome.storage.local.get("config", ({config}) => {
+    config.rules.forEach(data => {
+      addRule(data)
+    })
+  })
+}
+
+reload()
 
 
 const featureTemplate = document.createElement("select")
@@ -113,6 +124,5 @@ function persist() {
   chrome.storage.local.get("config", ({config = getDefaultConfig()}) => {
     config.rules = newRules 
     chrome.storage.local.set({config})
-    console.log("PERSISTED")
   })
 }

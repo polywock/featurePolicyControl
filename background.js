@@ -68,7 +68,6 @@ class WebRequestManager {
   }
   attach = () => {
     if (this.attached) return 
-    speechSynthesis.speak(new SpeechSynthesisUtterance("YES"))
     this.attached = true 
     chrome.webRequest.onHeadersReceived.addListener(this.handleHeadersReceived, {
       urls: ["https://*/*", "http://*/*"],
@@ -77,7 +76,6 @@ class WebRequestManager {
   }
   detach = () => {
     if (!this.attached) return 
-    speechSynthesis.speak(new SpeechSynthesisUtterance("NO"))
     chrome.webRequest.onHeadersReceived.removeListener(this.handleHeadersReceived)
     this.attached = false 
   }
