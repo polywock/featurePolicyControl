@@ -1,11 +1,20 @@
+let gvar = {}
 
-window.add.addEventListener("click", () => {
-  addRule(getDefaultRule())
+function getDefaultConfig() {
+  return chrome.runtime.sendMessage({type: "GET_DEFAULT_CONFIG"})
+}
+
+function getDefaultRule() {
+  return chrome.runtime.sendMessage({type: "GET_DEFAULT_RULE"})
+}
+
+window.add.addEventListener("click", async () => {
+  addRule(await getDefaultRule())
   persist()
 })
 
-window.reset.addEventListener("click", () => {
-  chrome.storage.local.set({config: getDefaultConfig()}, () => {
+window.reset.addEventListener("click", async () => {
+  chrome.storage.local.set({config: await getDefaultConfig()}, () => {
     reload()
   })
 })
@@ -44,55 +53,82 @@ function addRule(data) {
   urlInput.classList.add("v-url")
   urlInput.type = "text"
   urlInput.value = data.url 
-  if (data.triggerType === "ALL") {
-    urlInput.style.visibility = "hidden"
-  } 
   stateCheckbox.addEventListener("change", persist, true)
 
   const matchSelect = document.createElement("select")
   matchSelect.classList.add("v-match")
   matchSelect.innerHTML = `
     <option value="ALL">all urls</option>
-    <option value="REGEX">regex</option>
+    <option value="CONTAINS">contains</option>
     <option value="STARTS_WITH">starts with</option>`
   matchSelect.value = data.triggerType
-  matchSelect.addEventListener("change", () => {
+  matchSelect.sync = () => {
     if (matchSelect.value === "ALL") {
       urlInput.style.visibility = "hidden"
     } else {
       urlInput.style.visibility = "initial"
     }
+  }
+
+  matchSelect.addEventListener("change", () => {
+    matchSelect.sync() 
     persist()
   }, true)
-
-  const allowInput = document.createElement("input")
-  allowInput.classList.add("v-allow")
-  allowInput.type = "text"
-  allowInput.value = data.allowList
-  if (data.type === "CLEAR") {
-    allowInput.style.visibility = "hidden"
-  } 
-  allowInput.addEventListener("change", persist, true)
 
   const actionSelect = document.createElement("select")
   actionSelect.classList.add("v-action")
   actionSelect.innerHTML = `
-    <option value="CLEAR">clear</option>
-    <option value="OVERRIDE">override</option>`
+    <option value="CLEAR">unblock all</option>
+    <option value="OVERRIDE">block feature</option>
+    <option value="HEADER_REMOVE">remove header</option>
+    <option value="HEADER_SET">override header</option>
+    <option value="HEADER_APPEND">add header</option>
+  `
   actionSelect.value = data.type 
+  actionSelect.sync = () => {
+    let flagHeaderName = false
+    let flagHeaderValue = false
+    let flagFeatureSelect = false 
+    
+
+    if (actionSelect.value === "OVERRIDE") {
+      flagFeatureSelect = true 
+    } else if (actionSelect.value === "HEADER_REMOVE") {
+      flagHeaderName = true 
+    } else if (actionSelect.value === "HEADER_SET" || actionSelect.value === "HEADER_APPEND") {
+      flagHeaderName = true
+      flagHeaderValue = true 
+    } 
+
+    featureSelect.style.display = flagFeatureSelect ? "initial" : "none"
+    headerNameInput.style.display = flagHeaderName ? "initial" : "none"
+    headerValueInput.style.display = flagHeaderValue ? "initial" : "none"
+  }
+  
   actionSelect,addEventListener("change", () => {
-    if (actionSelect.value === "CLEAR") {
-      allowInput.style.visibility = "hidden"
-    } else {
-      allowInput.style.visibility = "initial"
-    }
+    actionSelect.sync()
     persist()
   })
+
 
   const featureSelect = featureTemplate.cloneNode(true)
   featureSelect.classList.add("v-feature")
   featureSelect.value = data.feature
   featureSelect.addEventListener("change", persist, true)
+
+  const headerNameInput = document.createElement("input")
+  headerNameInput.classList.add(`v-headerName`)
+  headerNameInput.type = "text"
+  headerNameInput.placeholder = "header name"
+  headerNameInput.value = data.headerName ?? ""
+  headerNameInput.addEventListener("change", persist, true)
+
+  const headerValueInput = document.createElement("input")
+  headerValueInput.classList.add(`v-headerValue`)
+  headerValueInput.type = "text"
+  headerValueInput.placeholder = "header value"
+  headerValueInput.value = data.headerValue ?? ""
+  headerValueInput.addEventListener("change", persist, true)
 
 
   const removeButton = document.createElement("button")
@@ -105,7 +141,14 @@ function addRule(data) {
     persist()
   })
 
-  rule.append(stateCheckbox, matchSelect, urlInput, actionSelect, featureSelect, allowInput, removeButton)
+  const valuesDiv = document.createElement("div")
+  valuesDiv.classList.add("values")
+  valuesDiv.append(featureSelect, headerNameInput, headerValueInput)
+
+  matchSelect.sync() 
+  actionSelect.sync() 
+
+  rule.append(stateCheckbox, matchSelect, urlInput, actionSelect, valuesDiv, removeButton)
 
   window.rules.appendChild(rule)
 }
@@ -118,7 +161,8 @@ function persist() {
     triggerType: elem.querySelector(".v-match").value,
     url: elem.querySelector(".v-url").value,
     feature: elem.querySelector(".v-feature").value,
-    allowList: elem.querySelector(".v-allow").value
+    headerName: elem.querySelector(".v-headerName").value,
+    headerValue: elem.querySelector(".v-headerValue").value,
   }))
 
   chrome.storage.local.get("config", ({config = getDefaultConfig()}) => {

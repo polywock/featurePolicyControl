@@ -1,106 +1,162 @@
+chrome.dnr = chrome.declarativeNetRequest
 
-chrome.runtime.onInstalled.addListener(({reason}) => {
-  if (reason === chrome.runtime.OnInstalledReason.INSTALL) {
-    chrome.storage.local.set({config: getDefaultConfig()})
-  }
+
+chrome.runtime.onInstalled.addListener(async ({reason}) => {
+  const config = await migrate()
+  chrome.storage.local.set({config})
+  update(config)
 })
 
-class WebRequestManager {
-  attached = false 
-  constructor() {
-    chrome.storage.local.get("config", ({config = getDefaultConfig()}) => {
-      this.config = config
-      this.handleConfigChange()
-    })
-    chrome.storage.onChanged.addListener((changes, area) => {
-      if (area !== "local") return 
-      const newConfig = changes.config?.newValue
-      if (!newConfig) return 
-      this.config = newConfig
-      this.handleConfigChange()
-    })
-  }
-  release = () => {
-    chrome.webRequest.onHeadersReceived.removeListener(this.handleHeadersReceived)
-  }
-  handleHeadersReceived = (details) => {
-    let newHeaders = []
-    let featurePolicies = []
+let timeoutId
+chrome.storage.onChanged.addListener(() => {
+  clearTimeout(timeoutId)
+  timeoutId = setTimeout(async () => {
+    update((await chrome.storage.local.get('config'))['config'] ?? getDefaultConfig())
+  }, 1000)
+})
 
-    details.responseHeaders.forEach(header => {
-      if (header.name.trim().toLowerCase() !== "feature-policy") {
-        newHeaders.push({name: header.name, value: header.value, binaryValue: header.binaryValue})
-      } else {
-        featurePolicies = [...featurePolicies, ...fpParser(header.value.trim())]
-      }
-    })
 
-    let flag = false 
-    this.rules.filter(v => v.enabled).forEach(rule => {
-      if (rule.triggerType === "STARTS_WITH") {
-        if (!details.url.startsWith(rule.url)) return 
-      } else if (rule.triggerType === "REGEX") {
-        if (!rule.regex.test(details.url)) return 
-      }
+async function update(config) {
+  const existing = await chrome.dnr.getDynamicRules()
+  await chrome.dnr.updateDynamicRules({
+    removeRuleIds: existing.map(r => r.id)
+  })
 
-      let ogCount = featurePolicies.length
+  if (!config.enabled) return 
+  let groups = groupRulesByTarget((config.rules ?? []).filter(rule => rule.enabled)) 
 
-      featurePolicies = featurePolicies.filter(fp => fp.feature !== rule.feature)
-      if (rule.type === "CLEAR") {
-        if (featurePolicies.length < ogCount) {
-          flag = true 
-        }
-      } else  {
-        flag = true 
-        featurePolicies.push({feature: rule.feature, allowList: [rule.allowList || "'none'"]})
-      }
-    })
 
-    if (!flag) return 
-    if (featurePolicies.length > 0) {
-      newHeaders.push({
-        name: "feature-policy",
-        value: featurePolicies.map(f => [f.feature, ...f.allowList].join(" ")).join(";")
-      })
+
+  const dyno = groups.map((group, i) => ({
+    id: i + 1, 
+    priority: group.priority,
+    condition: {
+      urlFilter: group.filter,
+      resourceTypes: [chrome.dnr.ResourceType.MAIN_FRAME, chrome.dnr.ResourceType.SUB_FRAME]
+    },
+    action: {
+      type: chrome.dnr.RuleActionType.MODIFY_HEADERS,
+      responseHeaders: group.headers 
     }
+  }))
 
-    return {responseHeaders: newHeaders}
-  }
-  attach = () => {
-    if (this.attached) return 
-    this.attached = true 
-    chrome.webRequest.onHeadersReceived.addListener(this.handleHeadersReceived, {
-      urls: ["https://*/*", "http://*/*"],
-      types: ['main_frame']
-    }, ['blocking', 'responseHeaders'])
-  }
-  detach = () => {
-    if (!this.attached) return 
-    chrome.webRequest.onHeadersReceived.removeListener(this.handleHeadersReceived)
-    this.attached = false 
-  }
-  handleConfigChange = () => {
-    chrome.browserAction.setIcon({path: this.config.enabled ? {"128": "icon128.png"} : {"128": "icon128_grayscale.png"}})
-    this.rules = this.config.rules.map(rule => ({
-      ...rule,
-      regex: rule.triggerType === "REGEX" ? new RegExp(rule.url, "i") : null  
-    }))
-    if (this.config.enabled && this.config.rules.filter(v => v.enabled).length) {
-      this.attach()
-    } else {
-      this.detach()
-    }
-  }
-}
 
-function fpParser(value) {
-  value = value.trim() 
-  if (value.length === 0) return []
-  return value.split(";").map(v => {
-    let [feature, ...allowList] = v.trim().split(/\s+/)
-    return {feature, allowList}
+  chrome.dnr.updateDynamicRules({
+    addRules: dyno
   })
 }
 
+function ruleToUrlFilter(rule) {
+  return rule.triggerType === "CONTAINS" ? `*${rule.url}*` : (rule.triggerType === "ALL" ? `*` : `${rule.url}*`)
+}
 
-window.mgr = new WebRequestManager()
+
+function randomId() {
+  return Math.floor(Math.random() * 10000000000).toString()
+}
+
+function getDefaultConfig() {
+  return {
+    version: 2,
+    enabled: true,
+    rules: [
+      getDefaultRule()
+    ]
+  }
+}
+
+function getDefaultRule() {
+  return {
+    type: "CLEAR",
+    key: randomId(),
+    enabled: true,
+    triggerType: "CONTAINS",
+    url: `tv.youtube.com`,
+    feature: "picture-in-picture"
+  }
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+  if (msg.type === "GET_DEFAULT_RULE") {
+    reply(getDefaultRule())
+  } else if (msg.type === "GET_DEFAULT_CONFIG") {
+    reply(getDefaultConfig() )
+  }
+})
+
+async function migrate() {
+  let config = (await chrome.storage.local.get('config'))["config"] ?? getDefaultConfig()
+  if (config.version === 1) {
+    config.version = 2 
+    config.rules = (config.rules ?? []).filter(rule => rule.triggerType !== "REGEX")
+
+    config.rules.forEach(rule => {
+      delete rule.allowList
+    })
+  }
+  const defaultConfig = getDefaultConfig()
+  if (config.version !== defaultConfig.version) {
+    config = defaultConfig
+  }
+
+  return config 
+}
+
+function groupRulesByTarget(rules) {
+  let ruleMap = {}
+  for (let rule of rules) {
+    let lowPriority = rule.type === "HEADER_APPEND" || rule.type === "OVERRIDE"
+    const key = `${rule.url}--${rule.triggerType}`
+    ruleMap[key] = ruleMap[key] ?? {
+      headers: [], 
+      priority: lowPriority ? 1 : 2,
+      filter: ruleToUrlFilter(rule),
+    }
+    const h = ruleMap[key].headers 
+    if (rule.type === "OVERRIDE") {
+      h.push({
+        header: 'Permissions-Policy',
+        operation: chrome.dnr.HeaderOperation.APPEND,
+        value: `${rule.feature}=()`
+      })
+    } else if (rule.type === "CLEAR") {
+      h.push(
+        {
+          header: 'Permissions-Policy',
+          operation: chrome.dnr.HeaderOperation.REMOVE,
+        },
+        {
+          header: 'Feature-Policy',
+          operation: chrome.dnr.HeaderOperation.REMOVE,
+        }
+      )
+    } else if (rule.type === "HEADER_REMOVE" && rule.headerName) {
+      h.push(
+        {
+          header: rule.headerName,
+          operation: chrome.dnr.HeaderOperation.REMOVE,
+        }
+      )
+    } else if (rule.type === "HEADER_SET" && rule.headerName) {
+      h.push(
+        {
+          header: rule.headerName,
+          operation: chrome.dnr.HeaderOperation.SET,
+          value: rule.headerValue || ""
+        }
+      )
+    } else if (rule.type === "HEADER_APPEND" && rule.headerName) {
+      h.push(
+        {
+          header: rule.headerName,
+          operation: chrome.dnr.HeaderOperation.APPEND,
+          value: rule.headerValue || "" 
+        }
+      )
+    } 
+
+    if (!h.length) delete ruleMap[key]
+  }
+
+  return Object.values(ruleMap)
+}

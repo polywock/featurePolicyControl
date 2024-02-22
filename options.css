@@ -22,7 +22,7 @@
 }
 
 body {
-  font-family: "Open Sans", monospace;
+  font-family: "Segoe UI", "Avenir", Courier, monospace;;
   font-size: 14px; 
 
   margin: 0;
@@ -92,7 +92,7 @@ body {
 
 #Wrapper {
   margin: 0px;
-  width: 1000px;
+  width: 1100px;
   margin-top: 40px;
 }
 
@@ -110,11 +110,17 @@ body {
 .section:first-child > #rules > div {
   margin-bottom: 10px;
   display: grid; 
-  grid-template-columns: max-content max-content 1fr max-content max-content 100px max-content;
+  grid-template-columns: max-content max-content 300px max-content 1fr max-content;
   align-items: center;
   border: 1px solid var(--border-color);
   padding: 10px; 
   column-gap: 10px;
+
+  .values {
+    display: grid;
+    grid-auto-flow: column;
+    column-gap: 10px;
+  }
 }
 
 .section:nth-child(2) button {

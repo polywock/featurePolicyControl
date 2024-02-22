@@ -1,17 +1,19 @@
 {
-  "name": "Feature Policy Control",
-  "version": "0.2",
-  "description": "Control Feature-Policy response headers.",
-  "manifest_version": 2,
-  "permissions": ["webRequest", "webRequestBlocking", "storage", "https://*/*", "http://*/*"],
-  "browser_action": {
+  "name": "Simple Headers",
+  "version": "0.4",
+  "description": "Simple editor for response headers.",
+  "manifest_version": 3,
+  "host_permissions": ["https://*/*", "http://*/*"],
+  "permissions": ["declarativeNetRequestWithHostAccess", "storage"],
+  "action": {
     "default_popup": "popup.html"
   },
   "icons": { 
     "128": "icon128.png" 
   },
   "background": {
-    "scripts": ["common.js", "background.js"]
+    "service_worker": "background.js",
+    "type": "module"
   },
   "options_ui": {
     "open_in_tab": true,
