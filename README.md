@@ -1,5 +1,5 @@
 # Simple Headers 
-### Formerly known as Feature Policy Control
+#### Formerly named Feature Policy Control
 
 - Remove, set, and add response headers. 
 - Block features through Permissions Policy.
